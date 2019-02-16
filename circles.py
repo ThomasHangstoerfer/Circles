@@ -1,6 +1,6 @@
 # Circles
 #
-# Author: Thomas Hangstörfer
+# Author: Thomas Hangstoerfer
 # License: see LICENSE file
 #
 # https://developer.akamai.com/blog/2017/06/21/building-virtual-python-environment/
