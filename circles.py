@@ -36,10 +36,10 @@ pygame.display.set_caption('Circles')
 textsurface = pygame.Surface((200, 70))
 textsurface.fill((0, 0, 0))
 GAME_FONT = pygame.freetype.SysFont(pygame.freetype.get_default_font(), 10)
-GAME_FONT.render_to(textsurface, (0, 0 * (GAME_FONT.size + 2)), "l = show lines", (100, 155, 100))
-GAME_FONT.render_to(textsurface, (0, 1 * (GAME_FONT.size + 2)), "r = reset", (100, 155, 100))
-GAME_FONT.render_to(textsurface, (0, 2 * (GAME_FONT.size + 2)), "+ = more circles", (100, 155, 100))
-GAME_FONT.render_to(textsurface, (0, 3 * (GAME_FONT.size + 2)), "- = less circles", (100, 155, 100))
+GAME_FONT.render_to(textsurface, (0, 0 * (GAME_FONT.size + 2)), "+ = more circles", (100, 155, 100))
+GAME_FONT.render_to(textsurface, (0, 1 * (GAME_FONT.size + 2)), "- = less circles", (100, 155, 100))
+GAME_FONT.render_to(textsurface, (0, 2 * (GAME_FONT.size + 2)), "l = show lines", (100, 155, 100))
+GAME_FONT.render_to(textsurface, (0, 3 * (GAME_FONT.size + 2)), "r = reset", (100, 155, 100))
 GAME_FONT.render_to(textsurface, (0, 4 * (GAME_FONT.size + 2)), "select circle with cursor-keys", (100, 155, 100))
 GAME_FONT.render_to(textsurface, (0, 5 * (GAME_FONT.size + 2)), "page-up/-down to change frequency", (100, 155, 100))
 
@@ -51,7 +51,7 @@ angle = radians(0)
 x = 200
 y = 50
 show_lines = 0
-show_circle_count = 1
+show_circle_count = 2
 selected_circle_x = -1
 selected_circle_y = -1
 
@@ -107,7 +107,7 @@ while True:
     # print("selected_circle_x = %i selected_circle_y = %i" % (selected_circle_x, selected_circle_y))
 
     for event in pygame.event.get():
-        print('event: ', event)
+        # print('event: ', event)
         if event.type == pygame.QUIT: sys.exit()
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_q:
@@ -179,21 +179,26 @@ while True:
     if pygame.time.get_ticks() - ticks > 240:
         ticks = pygame.time.get_ticks()
 
+    # Draw cursor-rectangle if in cursor-mode
     if selected_circle_x >= 0 or selected_circle_y >= 0:
         rectX = circleOffsetX + ((selected_circle_x+1) * circleDistance) - radius
         rectY = circleOffsetY + ((selected_circle_y+1) * circleDistance) - radius
         pygame.draw.rect(screen, (100, 100, 100), (rectX-5, rectY-5, (radius*2)+10, (radius*2)+10), 1)
 
+    # Draw all active horizontal master-circles
     for i in range(min(len(circlesX), show_circle_count)):
         circlesX[i].draw(screen, circleOffsetX + circleDistance + (i * circleDistance), circleOffsetY)
+        # Draw frequency-text if in cursor-mode
         if selected_circle_x >= 0 or selected_circle_y >= 0:
             GAME_FONT.render_to(screen, (circleOffsetX + circleDistance + (i * circleDistance), circleOffsetY),
                             "%.1f" % circlesX[i].freq, (100, 155, 100))
         if show_lines:
             pygame.draw.line(screen, circlesX[i].color, (circlesX[i].x, 0), (circlesX[i].x, height))
 
+    # Draw all active vertical master-circles
     for i in range(min(len(circlesY), show_circle_count)):
         circlesY[i].draw(screen, circleOffsetX, circleOffsetY + circleDistance + (i * circleDistance))
+        # Draw frequency-text if in cursor-mode
         if selected_circle_x >= 0 or selected_circle_y >= 0:
             GAME_FONT.render_to(screen, (circleOffsetX, circleOffsetY + circleDistance + (i * circleDistance)),
                             "%.1f" % circlesY[i].freq, (100, 155, 100))
@@ -202,22 +207,43 @@ while True:
 
     for u in range(min(len(circlesX), show_circle_count)):
         for v in range(min(len(circlesY), show_circle_count)):
-            min_count = min(len(circlesX[u].trace), len(circlesY[v].trace))
-            mix_color = ((circlesX[u].color[0]+circlesY[v].color[0])/2,
-                         (circlesX[u].color[1]+circlesY[v].color[1])/2,
-                         (circlesX[u].color[2]+circlesY[v].color[2])/2)
-            for i in range(min_count):
-                x = circlesX[u].trace[len(circlesX[u].trace)-1-i][0]
-                y = circlesY[v].trace[len(circlesY[v].trace)-1-i][1]
+            trace_pixel_count = min(len(circlesX[u].trace), len(circlesY[v].trace))
+            #print("+++++++++++++++++++++++++++++++++")
+            for i in range(trace_pixel_count):
+                trace_pixel_pos_x = len(circlesX[u].trace) - trace_pixel_count + i - 1
+                trace_pixel_pos_y = len(circlesY[v].trace) - trace_pixel_count + i - 1
+                #if u == 0 and v == 1:
+                #    print("trace_pixel_pos_x  = %i trace_pixel_pos_y = %i" %(trace_pixel_pos_x , trace_pixel_pos_y))
+                # x = circlesX[u].trace[len(circlesX[u].trace)-1-i][0]
+                # y = circlesY[v].trace[len(circlesY[v].trace)-1-i][1]
+                x = circlesX[u].trace[trace_pixel_pos_x][0]
+                y = circlesY[v].trace[trace_pixel_pos_y][1]
                 if i == 0:
-                    screen.set_at((x, y), mix_color)
+                    #mix_color = ((circlesX[u].color[0] + circlesY[v].color[0]) / 2,
+                    #             (circlesX[u].color[1] + circlesY[v].color[1]) / 2,
+                    #             (circlesX[u].color[2] + circlesY[v].color[2]) / 2)
+                    #screen.set_at((x, y), mix_color)
+                    pass
                 else:
-                    x1 = circlesX[u].trace[len(circlesX[u].trace) - i][0]
-                    y1 = circlesY[v].trace[len(circlesY[v].trace) - i][1]
-                    mix_color = (max(min((circlesX[u].color[0] + circlesY[v].color[0]) / 2 - (min_count-i), 255), 0),
-                                 max(min((circlesX[u].color[1] + circlesY[v].color[1]) / 2 - (min_count-i), 255), 0),
-                                 max(min((circlesX[u].color[2] + circlesY[v].color[2]) / 2 - (min_count-i), 255), 0))
+
+                    xColor1 = (circlesX[u].color[0]/trace_pixel_count) * (trace_pixel_pos_x)
+                    xColor2 = (circlesX[u].color[1]/trace_pixel_count) * (trace_pixel_pos_x)
+                    xColor3 = (circlesX[u].color[2]/trace_pixel_count) * (trace_pixel_pos_x)
+                    yColor1 = (circlesY[v].color[0]/trace_pixel_count) * (trace_pixel_pos_y)
+                    yColor2 = (circlesY[v].color[1]/trace_pixel_count) * (trace_pixel_pos_y)
+                    yColor3 = (circlesY[v].color[2]/trace_pixel_count) * (trace_pixel_pos_y)
+                    #if u == 0 and v == 1:
+                    #    print("(%i, %i, %i) -> %.2f, %.2f, %.2f" % (circlesX[u].color[0], circlesX[u].color[1], circlesX[u].color[2], xColor1, xColor2, xColor3))
+
+                    x1 = circlesX[u].trace[trace_pixel_pos_x + 1][0]
+                    y1 = circlesY[v].trace[trace_pixel_pos_y + 1][1]
+                    #mix_color = (max(min((circlesX[u].color[0] + circlesY[v].color[0]) / 2 - (trace_pixel_count - i), 255), 0),
+                    #             max(min((circlesX[u].color[1] + circlesY[v].color[1]) / 2 - (trace_pixel_count - i), 255), 0),
+                    #             max(min((circlesX[u].color[2] + circlesY[v].color[2]) / 2 - (trace_pixel_count - i), 255), 0))
+                    mix_color = ( min((xColor1+yColor1)/2, 255), min((xColor2+yColor2)/2, 255), min((xColor3+yColor3)/2, 255))
+                    #print("mix_color %i %i %i " % mix_color)
                     pygame.draw.line(screen, mix_color, (x, y), (x1, y1), 1)
+
             pygame.draw.circle(screen, (255, 255, 255), (int(circlesX[u].x), int(circlesY[v].y)), 3)
 
     pygame.display.flip()
